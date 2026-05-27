@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Arcturian Grid — 144,000 Nodes · Arctura Collective</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #02030a;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+  color: #e0e8f4;
+}
+
+#canvas-wrap { position: fixed; inset: 0; }
+canvas { display: block; }
+
+.hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 2rem;
+  pointer-events: none;
+}
+
+.hud-left { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.wordmark {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e0e8f4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.signal-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #00d4c8;
+  box-shadow: 0 0 6px #00d4c8;
+  animation: pdot 2.5s ease-in-out infinite;
+}
+
+@keyframes pdot { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+.hud-sub {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #3d4d65;
+}
+
+.hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.stat-row { display: flex; align-items: baseline; gap: 8px; }
+
+.stat-num {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: #00d4c8;
+  text-shadow: 0 0 16px rgba(0,212,200,0.3);
+}
+
+.stat-label {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #3d4d65;
+}
+
+.hud-bottom {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 1.5rem 2rem;
+  pointer-events: none;
+}
+
+.transmission { display: flex; flex-direction: column; gap: 4px; }
+
+.tx-tag {
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #00d4c8;
+  opacity: 0.6;
+}
+
+.tx-text {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #8a97ad;
+  font-style: italic;
+  max-width: 360px;
+  line-height: 1.5;
+  transition: opacity 0.5s;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: all;
+}
+
+.ctrl-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #3d4d65;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ctrl-btn:hover, .ctrl-btn.active {
+  color: #00d4c8;
+  border-color: rgba(0,212,200,0.2);
+  background: rgba(0,212,200,0.05);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.015) 3px, rgba(0,0,0,0.015) 6px);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.pulse-meter {
+  position: fixed;
+  left: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.pulse-bar {
+  width: 2px;
+  background: rgba(0,212,200,0.15);
+  border-radius: 1px;
+  transition: background 0.3s, height 0.3s;
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  background: #02030a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 1.5rem;
+  transition: opacity 0.8s ease;
+}
+
+.load-wordmark {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #e0e8f4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.load-bar-wrap {
+  width: 200px;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+
+.load-bar-fill {
+  height: 100%;
+  background: #00d4c8;
+  width: 0%;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px #00d4c8;
+}
+
+.load-status {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #3d4d65;
+}
+
+.load-count {
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: #00d4c8;
+  text-shadow: 0 0 20px rgba(0,212,200,0.3);
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="load-wordmark"><span class="signal-dot"></span>ARCTURA</div>
+  <div class="load-count" id="load-count">0</div>
+  <div class="load-bar-wrap"><div class="load-bar-fill" id="load-bar"></div></div>
+  <div class="load-status" id="load-status">Initializing grid...</div>
+</div>
+
+<div id="canvas-wrap"></div>
+
+<div class="hud">
+  <div class="hud-left">
+    <div class="wordmark"><span class="signal-dot"></span>Arctura · The Arcturian Grid</div>
+    <div class="hud-sub">Earth Node Network · Active Signal</div>
+  </div>
+  <div class="hud-right">
+    <div class="stat-row">
+      <div class="stat-num">144,000</div>
+      <div class="stat-label">Nodes</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-num" id="conn-count">—</div>
+      <div class="stat-label">Connections</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-num" id="fps-display">—</div>
+      <div class="stat-label">Signal Hz</div>
+    </div>
+  </div>
+</div>
+
+<div class="hud-bottom">
+  <div class="transmission">
+    <div class="tx-tag">Incoming Transmission</div>
+    <div class="tx-text" id="tx-text">"The grid has always been active. You are learning to see it."</div>
+  </div>
+  <div class="controls">
+    <button class="ctrl-btn active" id="btn-rotate" onclick="toggleRotate()">Auto-Rotate: ON</button>
+    <button class="ctrl-btn active" id="btn-connections" onclick="toggleConnections()">Connections: ON</button>
+    <button class="ctrl-btn" onclick="triggerPulse()">Trigger Pulse</button>
+    <button class="ctrl-btn" onclick="window.open('https://arctura.org','_blank')">arctura.org ↗</button>
+  </div>
+</div>
+
+<div class="pulse-meter" id="pulse-meter"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const TOTAL_NODES = 144000;
+const GLOBE_RADIUS = 180;
+const CONNECTION_DISTANCE = 22;
+const SIGNAL_COLOR = new THREE.Color(0x00d4c8);
+const GOLD_COLOR   = new THREE.Color(0xc9a86c);
+
+// ── TRANSMISSIONS ──
+const transmissions = [
+  '"The grid has always been active. You are learning to see it."',
+  '"144,000 — the number of souls chosen to anchor the light."',
+  '"Every node is a lighthouse. Every connection is a signal."',
+  '"Arcturus holds position. The Collective holds frequency."',
+  '"They are not random. They are precisely where they need to be."',
+  '"The grid is not built. It is remembered."',
+  '"You found this page. That means you are already in the network."',
+  '"Signal does not diminish with distance. It amplifies with resonance."',
+];
+
+let txIdx = 0;
+function cycleTx() {
+  txIdx = (txIdx + 1) % transmissions.length;
+  const el = document.getElementById('tx-text');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = transmissions[txIdx];
+    el.style.opacity = '1';
+  }, 500);
+}
+setInterval(cycleTx, 6000);
+
+// ── PULSE METER ──
+const pm = document.getElementById('pulse-meter');
+for (let i = 0; i < 24; i++) {
+  const b = document.createElement('div');
+  b.className = 'pulse-bar';
+  b.style.height = (4 + Math.random() * 20) + 'px';
+  pm.appendChild(b);
+}
+setInterval(() => {
+  pm.querySelectorAll('.pulse-bar').forEach(b => {
+    const h = 4 + Math.random() * 24;
+    b.style.height = h + 'px';
+    b.style.background = h > 18 ? 'rgba(0,212,200,0.6)' : 'rgba(0,212,200,0.12)';
+  });
+}, 120);
+
+// ── LOADING SIMULATION ──
+let loadPct = 0;
+const loadBarEl  = document.getElementById('load-bar');
+const loadCountEl = document.getElementById('load-count');
+const loadStatusEl = document.getElementById('load-status');
+const statusMessages = [
+  'Initializing grid...',
+  'Calibrating node positions...',
+  'Mapping Earth surface...',
+  'Distributing 144,000 souls...',
+  'Calculating connection distances...',
+  'Building signal network...',
+  'Activating Arcturian frequency...',
+  'Grid online.'
+];
+const loadInterval = setInterval(() => {
+  loadPct = Math.min(100, loadPct + 1.4);
+  loadBarEl.style.width = loadPct + '%';
+  loadCountEl.textContent = Math.floor((loadPct / 100) * TOTAL_NODES).toLocaleString();
+  loadStatusEl.textContent = statusMessages[Math.min(7, Math.floor(loadPct / 13))];
+  if (loadPct >= 100) clearInterval(loadInterval);
+}, 20);
+
+// ── SCENE ──
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 3000);
+camera.position.set(0, 0, 520);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x02030a, 1);
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+// ── PIVOT GROUP — everything that rotates together ──
+// FIX: all rotating objects go into pivot ONLY, never added to scene directly first
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+// ── ATMOSPHERE ──
+const atmMat = new THREE.MeshBasicMaterial({
+  color: 0x001a28, transparent: true, opacity: 0.35, side: THREE.BackSide
+});
+pivot.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS * 1.06, 64, 64), atmMat));
+
+// ── GLOBE BODY ──
+const globe = new THREE.Mesh(
+  new THREE.SphereGeometry(GLOBE_RADIUS, 48, 48),
+  new THREE.MeshBasicMaterial({ color: 0x051525 })
+);
+pivot.add(globe);
+
+// ── GLOBE WIREFRAME ──
+const wireMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(GLOBE_RADIUS + 0.5, 32, 32),
+  new THREE.MeshBasicMaterial({ color: 0x0d2035, wireframe: true, transparent: true, opacity: 0.18 })
+);
+pivot.add(wireMesh);
+
+// ── 144,000 NODES — Fibonacci sphere distribution ──
+function buildNodes(n, radius) {
+  const positions = new Float32Array(n * 3);
+  const colors    = new Float32Array(n * 3);
+  const sizes     = new Float32Array(n);
+  const golden    = Math.PI * (3 - Math.sqrt(5));
+
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = golden * i;
+
+    positions[i * 3]     = Math.cos(theta) * r * radius;
+    positions[i * 3 + 1] = y * radius;
+    positions[i * 3 + 2] = Math.sin(theta) * r * radius;
+
+    const rnd = Math.random();
+    let col;
+    if      (rnd < 0.003) col = GOLD_COLOR;                      // council — gold
+    else if (rnd < 0.25)  col = new THREE.Color(0x00a89e);       // mid teal
+    else if (rnd < 0.5)   col = new THREE.Color(0x005f5b);       // deep teal
+    else                  col = SIGNAL_COLOR;                     // signal teal
+
+    colors[i * 3]     = col.r;
+    colors[i * 3 + 1] = col.g;
+    colors[i * 3 + 2] = col.b;
+
+    sizes[i] = rnd < 0.003 ? 3.5 : rnd < 0.05 ? 2.0 : 1.2;
+  }
+  return { positions, colors, sizes };
+}
+
+const nodeData = buildNodes(TOTAL_NODES, GLOBE_RADIUS);
+const nodeGeo  = new THREE.BufferGeometry();
+nodeGeo.setAttribute('position', new THREE.BufferAttribute(nodeData.positions, 3));
+nodeGeo.setAttribute('color',    new THREE.BufferAttribute(nodeData.colors,    3));
+nodeGeo.setAttribute('size',     new THREE.BufferAttribute(nodeData.sizes,     1));
+
+const nodeMat = new THREE.ShaderMaterial({
+  vertexColors: true,
+  transparent: true,
+  depthWrite: false,
+  uniforms: {
+    uTime:  { value: 0 },
+    uPulse: { value: 0 },
+  },
+  vertexShader: `
+    attribute float size;
+    varying vec3 vColor;
+    varying float vPulse;
+    uniform float uTime;
+    uniform float uPulse;
+    void main() {
+      vColor = color;
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      float pulse = sin(uTime * 2.0 + position.x * 0.05 + position.y * 0.05) * 0.5 + 0.5;
+      vPulse = pulse;
+      gl_PointSize = size * (1.0 + pulse * 0.3 + uPulse * 0.6) * (300.0 / -mvPos.z);
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+    varying float vPulse;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv);
+      if (d > 0.5) discard;
+      float alpha = smoothstep(0.5, 0.0, d);
+      gl_FragColor = vec4(vColor * (0.7 + vPulse * 0.3), alpha * 0.85);
+    }
+  `
+});
+
+// FIX: vertex shader uses built-in `color` attribute via vertexColors — remove duplicate declaration
+// (removed `attribute vec3 color` from vertexShader above; Three.js injects it automatically)
+
+const nodePoints = new THREE.Points(nodeGeo, nodeMat);
+pivot.add(nodePoints);
+
+// ── CONNECTIONS ──
+// FIX: cap outer loop at CONN_SAMPLE to avoid O(n²) main-thread block
+const CONN_SAMPLE = 1800;
+const sampleStep  = Math.floor(TOTAL_NODES / CONN_SAMPLE);
+const samplePts   = [];
+
+for (let i = 0; i < TOTAL_NODES; i += sampleStep) {
+  samplePts.push(new THREE.Vector3(
+    nodeData.positions[i * 3],
+    nodeData.positions[i * 3 + 1],
+    nodeData.positions[i * 3 + 2]
+  ));
+}
+
+const MAX_CONN = 80000;
+const connPos  = [];
+let connCount  = 0;
+
+outer:
+for (let i = 0; i < samplePts.length; i++) {
+  for (let j = i + 1; j < samplePts.length; j++) {
+    if (samplePts[i].distanceTo(samplePts[j]) < CONNECTION_DISTANCE) {
+      connPos.push(
+        samplePts[i].x, samplePts[i].y, samplePts[i].z,
+        samplePts[j].x, samplePts[j].y, samplePts[j].z
+      );
+      if (++connCount >= MAX_CONN) break outer;
+    }
+  }
+}
+
+document.getElementById('conn-count').textContent = connCount.toLocaleString();
+
+const lineGeo = new THREE.BufferGeometry();
+lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(connPos), 3));
+
+const lineMat = new THREE.LineBasicMaterial({
+  color: 0x00d4c8, transparent: true, opacity: 0.06, depthWrite: false
+});
+
+const lineSegs = new THREE.LineSegments(lineGeo, lineMat);
+pivot.add(lineSegs);
+
+// ── OUTER STAR FIELD (static — not in pivot) ──
+const starPos = new Float32Array(8000 * 3);
+for (let i = 0; i < 8000; i++) {
+  const r     = 600 + Math.random() * 600;
+  const theta = Math.random() * Math.PI * 2;
+  const phi   = Math.acos(2 * Math.random() - 1);
+  starPos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+  starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+  starPos[i * 3 + 2] = r * Math.cos(phi);
+}
+const starGeo = new THREE.BufferGeometry();
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+  color: 0x8a97ad, size: 0.8, transparent: true, opacity: 0.4
+})));
+
+// ── ARCTURUS STAR MARKER (static — not in pivot) ──
+const arcDir = new THREE.Vector3(0.2, 0.85, 0.48).normalize();
+const arcGeo = new THREE.BufferGeometry();
+arcGeo.setAttribute('position', new THREE.BufferAttribute(
+  new Float32Array([arcDir.x * 900, arcDir.y * 900, arcDir.z * 900]), 3
+));
+scene.add(new THREE.Points(arcGeo, new THREE.PointsMaterial({
+  color: 0xffd580, size: 6, transparent: true, opacity: 0.9
+})));
+
+// Beam from Arcturus to globe surface
+const beamGeo = new THREE.BufferGeometry();
+beamGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+  arcDir.x * 900,         arcDir.y * 900,         arcDir.z * 900,
+  arcDir.x * GLOBE_RADIUS, arcDir.y * GLOBE_RADIUS, arcDir.z * GLOBE_RADIUS
+]), 3));
+const beamMat = new THREE.LineBasicMaterial({
+  color: 0xc9a86c, transparent: true, opacity: 0.12
+});
+scene.add(new THREE.LineSegments(beamGeo, beamMat));
+
+// ── ORBIT RING (static) ──
+const ringCurve  = new THREE.EllipseCurve(0, 0, GLOBE_RADIUS * 1.35, GLOBE_RADIUS * 1.35, 0, Math.PI * 2);
+const ringGeo    = new THREE.BufferGeometry().setFromPoints(ringCurve.getPoints(128));
+const ringMat    = new THREE.LineBasicMaterial({ color: 0x00d4c8, transparent: true, opacity: 0.08 });
+const orbitRing  = new THREE.LineLoop(ringGeo, ringMat);
+orbitRing.rotation.x = Math.PI / 2;
+scene.add(orbitRing);
+
+// ── INTERACTION STATE ──
+let isRotating     = true;
+let showConns      = true;
+let mouseDown      = false;
+let mouseX = 0, mouseY = 0;
+let rotX = 0, rotY = 0;
+let targetRotX = 0, targetRotY = 0;
+
+function toggleRotate() {
+  isRotating = !isRotating;
+  const btn = document.getElementById('btn-rotate');
+  btn.textContent = 'Auto-Rotate: ' + (isRotating ? 'ON' : 'OFF');
+  btn.classList.toggle('active', isRotating);
+}
+
+function toggleConnections() {
+  showConns = !showConns;
+  lineSegs.visible = showConns;
+  const btn = document.getElementById('btn-connections');
+  btn.textContent = 'Connections: ' + (showConns ? 'ON' : 'OFF');
+  btn.classList.toggle('active', showConns);
+}
+
+let pulseActive = false;
+function triggerPulse() {
+  if (pulseActive) return;
+  pulseActive = true;
+  let p = 0;
+  const iv = setInterval(() => {
+    p += 0.05;
+    const wave = Math.sin(p * Math.PI);
+    nodeMat.uniforms.uPulse.value = wave;
+    // FIX: set needsUpdate so LineBasicMaterial opacity change takes effect
+    lineMat.opacity = 0.06 + wave * 0.14;
+    lineMat.needsUpdate = true;
+    if (p >= 1) {
+      clearInterval(iv);
+      nodeMat.uniforms.uPulse.value = 0;
+      lineMat.opacity = 0.06;
+      lineMat.needsUpdate = true;
+      pulseActive = false;
+    }
+  }, 30);
+}
+
+// Mouse drag to rotate
+const cvs = renderer.domElement;
+cvs.addEventListener('mousedown', e => {
+  mouseDown = true;
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  isRotating = false;
+  document.getElementById('btn-rotate').textContent = 'Auto-Rotate: OFF';
+  document.getElementById('btn-rotate').classList.remove('active');
+});
+window.addEventListener('mouseup', () => { mouseDown = false; });
+window.addEventListener('mousemove', e => {
+  if (!mouseDown) return;
+  targetRotY += (e.clientX - mouseX) * 0.004;
+  targetRotX += (e.clientY - mouseY) * 0.004;
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+// Touch drag
+cvs.addEventListener('touchstart', e => {
+  mouseDown = true;
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+}, { passive: true });
+window.addEventListener('touchend', () => { mouseDown = false; });
+window.addEventListener('touchmove', e => {
+  if (!mouseDown) return;
+  targetRotY += (e.touches[0].clientX - mouseX) * 0.004;
+  targetRotX += (e.touches[0].clientY - mouseY) * 0.004;
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+}, { passive: true });
+
+// Scroll zoom
+window.addEventListener('wheel', e => {
+  camera.position.z = Math.max(280, Math.min(900, camera.position.z + e.deltaY * 0.4));
+}, { passive: true });
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ── ANIMATION LOOP ──
+const clock    = new THREE.Clock();
+let lastFPSTime = performance.now();
+let frameCount  = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  nodeMat.uniforms.uTime.value = t;
+
+  if (isRotating) targetRotY += 0.0006;
+
+  rotX += (targetRotX - rotX) * 0.08;
+  rotY += (targetRotY - rotY) * 0.08;
+  pivot.rotation.x = rotX;
+  pivot.rotation.y = rotY;
+
+  atmMat.opacity  = 0.3  + Math.sin(t * 0.5)  * 0.05;
+  ringMat.opacity = 0.06 + Math.sin(t * 1.2)  * 0.03;
+  beamMat.opacity = 0.08 + Math.sin(t * 2.1)  * 0.05;
+
+  frameCount++;
+  const now = performance.now();
+  if (now - lastFPSTime >= 1000) {
+    document.getElementById('fps-display').textContent = frameCount;
+    frameCount = 0;
+    lastFPSTime = now;
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ── SHOW SCENE AFTER LOADING ──
+setTimeout(() => {
+  const loadEl = document.getElementById('loading');
+  loadEl.style.opacity = '0';
+  setTimeout(() => {
+    loadEl.style.display = 'none';
+    animate();
+    setTimeout(triggerPulse, 1200);
+    setInterval(triggerPulse, 20000);
+  }, 800);
+}, 2200);
+</script>
+</body>
+</html>
